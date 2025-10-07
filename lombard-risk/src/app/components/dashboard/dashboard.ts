@@ -10,20 +10,22 @@ import { Subject, of, lastValueFrom } from 'rxjs';
 import { RiskCalculatorService, PortfolioRow } from '../../services/risk-calculator';
 import { MarketDataService } from '../../services/market-data';
 import { FxService } from '../../services/fx';
-import { InfoHintComponent } from '../info-hint/info-hint/info-hint';
+import { InfoHintComponent } from '../info-hint/info-hint';
+import { IconComponent } from '../icon/icon';
 
 type Kpi = { eligibleCollateral: number; maxCredit: number; ltv: number; headroom: number; mcShock: number };
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, InfoHintComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, InfoHintComponent, IconComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
 export class DashboardComponent implements AfterViewInit, OnDestroy {
   @ViewChild('chartDiv') chartDiv!: ElementRef<HTMLDivElement>;
-  chart!: echarts.ECharts;
+  chart: echarts.ECharts | null = null;
+  private chartInited = false;
 
   search = '';
   suggestions: { symbol: string; name: string; exchange?: string; type?: string }[] = [];
@@ -33,6 +35,8 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
   form;
   kpi: Kpi = { eligibleCollateral: 0, maxCredit: 0, ltv: 0, headroom: 0, mcShock: 0 };
   private fxCache: Record<string, number> = { EUR: 1 };
+
+  trackBySymbol = (_: number, row: { symbol: string }) => row.symbol;
 
   constructor(
     private fb: FormBuilder,
@@ -47,8 +51,10 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  private onResize = () => this.chart?.resize();
+
+
   ngAfterViewInit() {
-    this.chart = echarts.init(this.chartDiv.nativeElement);
     this.form.valueChanges.subscribe(() => this.recalc());
 
     // autocomplete pipeline
@@ -59,12 +65,20 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
         switchMap(q => q.length < 2 ? of([]) : this.api.searchSymbols(q))
       )
       .subscribe(list => (this.suggestions = list));
-
-    window.addEventListener('resize', () => this.chart.resize());
+    window.addEventListener('resize', this.onResize);
   }
+
+  private ensureChart() {
+    if (!this.chartInited && this.chartDiv?.nativeElement) {
+      this.chart = echarts.init(this.chartDiv.nativeElement);
+      this.chartInited = true;
+    }
+  }
+
 
   ngOnDestroy() {
     this.chart?.dispose();
+    window.removeEventListener('resize', this.onResize);
   }
 
   // chiude dropdown se clicchi fuori
@@ -124,9 +138,25 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 
   recalc() {
     const v = this.form.value;
+
+    if (this.portfolio.length === 0) {
+      // svuota KPI e distruggi il chart se esiste
+      this.kpi = { eligibleCollateral: 0, maxCredit: 0, ltv: 0, headroom: 0, mcShock: 0 };
+      if (this.chartInited) {
+        this.chart?.clear();
+        this.chart?.dispose();
+        this.chartInited = false;
+        this.chart = null;
+      }
+      return;
+    }
+
     const rowsEUR = this.buildRowsEUR();
     const next = this.risk.computeKpi(rowsEUR, v.loanUsed ?? 0, v.haircut ?? 0.6, v.mcThresh ?? 0.75);
+
+    // attende il prossimo tick in cui *ngIf ha reso #chartDiv
     queueMicrotask(() => {
+      this.ensureChart();
       this.kpi = next;
       this.updateChart(rowsEUR, v.loanUsed ?? 0, v.haircut ?? 0.6, v.mcThresh ?? 0.75);
     });
@@ -138,6 +168,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
     haircut: number,
     mcThresh: number
   ) {
+    if (!this.chart) return;
     const stress = this.risk.stressTest(rowsEUR, loanUsed, haircut);
     const labels = stress.map(p => `${Math.round(p.shock * 100)}%`);
     const series = stress.map(p => +(p.ltv * 100).toFixed(1));
@@ -158,12 +189,17 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
           markLine: {
             symbol: 'none',
             lineStyle: { color: '#ef4444', type: 'dashed' },
-            label: { formatter: `Soglia MC (${(mcThresh * 100).toFixed(0)}%)`, position: 'end' },
+            label: { formatter: `Soglia Margin Call (${(mcThresh * 100).toFixed(0)}%)`, position: 'end' },
             data: [{ yAxis: mcThresh * 100 }],
           },
         },
       ],
     };
     this.chart.setOption(option);
+  }
+
+  removeRow(index: number): void {
+    this.portfolio.splice(index, 1);
+    this.recalc();
   }
 }
