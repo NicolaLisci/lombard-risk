@@ -1,24 +1,80 @@
-<div class="max-w-5xl mx-auto p-6 space-y-8">
-
-  <h1 class="text-3xl font-bold text-blue-600">Lombard Risk Dashboard</h1>
-
-  <div class="grid grid-cols-3 gap-4">
-    <div class="bg-white rounded-xl shadow p-4">
-      <h3 class="text-sm text-gray-500">Collaterale Idoneo</h3>
-      <p class="text-xl font-semibold">{{ ltvInfo.eligible | currency:'EUR' }}</p>
-    </div>
-    <div class="bg-white rounded-xl shadow p-4">
-      <h3 class="text-sm text-gray-500">LTV Attuale</h3>
-      <p class="text-xl font-semibold text-blue-600">{{ (ltvInfo.ltv * 100) | number:'1.1-1' }}%</p>
-    </div>
-    <div class="bg-white rounded-xl shadow p-4">
-      <h3 class="text-sm text-gray-500">Margine Residuo</h3>
-      <p class="text-xl font-semibold text-green-600">{{ ltvInfo.headroom | currency:'EUR' }}</p>
-    </div>
+<form [formGroup]="form" class="bg-white shadow rounded-2xl p-4">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-gray-600">Prestito usato (€)</span>
+      <input type="number" formControlName="loanUsed" class="border rounded-lg px-3 py-2" />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-gray-600">Advance Rate (0–1)</span>
+      <input type="number" step="0.01" min="0" max="1" formControlName="haircut" class="border rounded-lg px-3 py-2" />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-gray-600">Soglia Margin Call (0–1)</span>
+      <input type="number" step="0.01" min="0" max="1" formControlName="mcThresh" class="border rounded-lg px-3 py-2" />
+    </label>
   </div>
+</form>
 
-  <div class="bg-white shadow rounded-xl p-4">
-    <div #chartDiv class="w-full h-[400px]"></div>
+<!-- Add symbol -->
+<div class="bg-white shadow rounded-2xl p-4 my-4">
+  <div class="flex flex-wrap gap-2">
+    <input [(ngModel)]="search" placeholder="Cerca simbolo (es. AAPL)" class="border rounded-lg px-3 py-2">
+    <button (click)="addSymbol()" class="bg-blue-600 text-white rounded-xl px-4 py-2">Aggiungi</button>
   </div>
-
+  <div class="text-xs text-gray-500 mt-2">Usa Alpha Vantage (GLOBAL_QUOTE); valuta in EUR via FX.</div>
 </div>
+
+<!-- KPI -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 my-4">
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-sm text-gray-500">Collaterale Idoneo</div>
+    <div class="text-2xl font-semibold">{{ kpi.eligibleCollateral | currency:'EUR' }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-sm text-gray-500">LTV</div>
+    <div class="text-2xl font-semibold text-blue-600">{{ kpi.ltv * 100 | number:'1.1-1' }}%</div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-sm text-gray-500">Headroom</div>
+    <div class="text-2xl font-semibold" [ngClass]="kpi.headroom >= 0 ? 'text-green-600' : 'text-red-600'">
+      {{ kpi.headroom | currency:'EUR' }}
+    </div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <div class="text-sm text-gray-500">Calo a MC</div>
+    <div class="text-2xl font-semibold text-red-600">-{{ kpi.mcShock * 100 | number:'1.0-0' }}%
+    </div>
+  </div>
+</div>
+
+<!-- Grafico -->
+<div class="bg-white shadow rounded-2xl p-4 my-4">
+  <div #chartDiv class="w-full h-[420px]"></div>
+</div>
+
+<!-- Tabella portafoglio -->
+<table class="w-full table-auto bg-white rounded-2xl shadow">
+  <thead>
+    <tr class="text-left text-gray-500">
+      <th class="p-3">Ticker</th>
+      <th class="p-3">Nome</th>
+      <th class="p-3">Qty</th>
+      <th class="p-3">Prezzo</th>
+      <th class="p-3">Valuta</th>
+      <th class="p-3">Valore EUR</th>
+      <th class="p-3">Idoneo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let r of portfolio" class="border-t">
+      <td class="p-3">{{ r.symbol }}</td>
+      <td class="p-3">{{ r.name }}</td>
+      <td class="p-3"><input type="number" [(ngModel)]="r.qty" (change)="recalc()"
+          class="border rounded px-2 py-1 w-24"></td>
+      <td class="p-3">{{ r.price | number:'1.2-2' }}</td>
+      <td class="p-3">{{ r.currency }}</td>
+      <td class="p-3">{{ valueEUR(r) | number:'1.2-2' }}</td>
+      <td class="p-3"><input type="checkbox" [(ngModel)]="r.eligible" (change)="recalc()"></td>
+    </tr>
+  </tbody>
+</table>
