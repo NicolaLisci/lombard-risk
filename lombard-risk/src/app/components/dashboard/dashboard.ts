@@ -10,13 +10,14 @@ import { Subject, of, lastValueFrom } from 'rxjs';
 import { RiskCalculatorService, PortfolioRow } from '../../services/risk-calculator';
 import { MarketDataService } from '../../services/market-data';
 import { FxService } from '../../services/fx';
+import { InfoHintComponent } from '../info-hint/info-hint/info-hint';
 
 type Kpi = { eligibleCollateral: number; maxCredit: number; ltv: number; headroom: number; mcShock: number };
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, InfoHintComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })

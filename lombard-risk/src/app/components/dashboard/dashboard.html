@@ -1,93 +1,142 @@
 <form [formGroup]="form" class="bg-white shadow rounded-2xl p-4">
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <label class="flex flex-col gap-1">
-      <span class="text-sm text-gray-600">Prestito usato (€)</span>
-      <input type="number" formControlName="loanUsed" class="border rounded-lg px-3 py-2" />
+    <!-- Prestito usato -->
+    <label class="flex flex-col gap-1 relative">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Prestito usato (€)</span>
+        <app-info placement="left" text="Importo del credito Lombard effettivamente utilizzato."></app-info>
+      </div>
+      <input type="number" formControlName="loanUsed" inputmode="decimal"
+        class="border rounded-lg px-3 py-2 text-base md:text-sm" />
     </label>
-    <label class="flex flex-col gap-1">
-      <span class="text-sm text-gray-600">Advance Rate (0–1)</span>
-      <input type="number" step="0.01" min="0" max="1" formControlName="haircut" class="border rounded-lg px-3 py-2" />
+
+    <!-- Advance Rate -->
+    <label class="flex flex-col gap-1 relative">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Advance Rate (0–1)</span>
+        <app-info placement="left"
+          text="Percentuale del collaterale considerata a garanzia (es. 0,60 = 60%)."></app-info>
+      </div>
+      <input type="number" step="0.01" min="0" max="1" formControlName="haircut" inputmode="decimal"
+        class="border rounded-lg px-3 py-2 text-base md:text-sm" />
     </label>
-    <label class="flex flex-col gap-1">
-      <span class="text-sm text-gray-600">Soglia Margin Call (0–1)</span>
-      <input type="number" step="0.01" min="0" max="1" formControlName="mcThresh" class="border rounded-lg px-3 py-2" />
+
+    <!-- Soglia MC -->
+    <label class="flex flex-col gap-1 relative">
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-600">Soglia Margin Call (0–1)</span>
+        <app-info placement="left"
+          text="Valore di LTV oltre il quale la banca richiede di ripristinare le garanzie."></app-info>
+      </div>
+      <input type="number" step="0.01" min="0" max="1" formControlName="mcThresh" inputmode="decimal"
+        class="border rounded-lg px-3 py-2 text-base md:text-sm" />
     </label>
   </div>
 </form>
 
-<!-- Add symbol -->
 <!-- AUTOCOMPLETE -->
 <div class="bg-white shadow rounded-2xl p-4 my-4 relative">
-  <div class="flex flex-wrap gap-2">
+  <div class="flex gap-2">
     <input id="symbolSearchBox" [(ngModel)]="search" (ngModelChange)="onSearchChange($event)"
-      placeholder="Cerca simbolo (es. VWCE, AAPL, ENEL.MI)" class="border rounded-lg px-3 py-2 w-full"
-      autocomplete="off" />
+      placeholder="Cerca simbolo (es. VWCE, AAPL, ENEL.MI)"
+      class="border rounded-lg px-3 py-2 w-full text-base md:text-sm" autocomplete="off" />
   </div>
 
   <!-- dropdown -->
   <ul id="symbolDropdown" *ngIf="suggestions.length > 0"
-    class="absolute bg-white border rounded-lg mt-1 w-full shadow-lg z-10">
-    <li *ngFor="let s of suggestions" (click)="onSelectSuggestion(s)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer">
-      <div class="font-semibold">{{ s.symbol }}</div>
-      <div class="text-xs text-gray-500">{{ s.name }} • {{ s.exchange }}</div>
+    class="absolute left-0 right-0 bg-white border rounded-lg mt-1 w-full shadow-lg z-30 max-h-72 overflow-auto">
+    <li *ngFor="let s of suggestions" (click)="onSelectSuggestion(s)"
+      class="px-3 py-3 md:py-2 hover:bg-blue-50 cursor-pointer">
+      <div class="font-semibold text-sm md:text-base">{{ s.symbol }}</div>
+      <div class="text-xs md:text-[11px] text-gray-500">{{ s.name }} • {{ s.exchange }}</div>
     </li>
   </ul>
+
+  <div class="text-xs text-gray-500 mt-2">Fonte: Yahoo Finance (via RapidAPI)</div>
 </div>
 
-
-
-
 <!-- KPI -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 my-4">
-  <div class="bg-white rounded-xl shadow p-4">
-    <div class="text-sm text-gray-500">Collaterale Idoneo</div>
-    <div class="text-2xl font-semibold">{{ kpi.eligibleCollateral | currency:'EUR' }}</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-4">
+  <div class="bg-white rounded-xl shadow p-4 relative">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-gray-500">Collaterale Idoneo</div>
+      <app-info placement="left" class="absolute top-2 right-2"
+        text="Valore in EUR dei soli titoli marcati Idoneo."></app-info>
+    </div>
+    <div class="mt-2 text-2xl font-semibold break-words">{{ kpi.eligibleCollateral | currency:'EUR' }}</div>
   </div>
-  <div class="bg-white rounded-xl shadow p-4">
-    <div class="text-sm text-gray-500">LTV</div>
-    <div class="text-2xl font-semibold text-blue-600">{{ kpi.ltv * 100 | number:'1.1-1' }}%</div>
+
+  <div class="bg-white rounded-xl shadow p-4 relative">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-gray-500">LTV</div>
+      <app-info placement="left" class="absolute top-2 right-2"
+        text="Loan-to-Value = Prestito usato ÷ (Collaterale idoneo × Advance Rate)."></app-info>
+    </div>
+    <div class="mt-2 text-2xl font-semibold text-blue-600">{{ kpi.ltv * 100 | number:'1.1-1' }}%</div>
   </div>
-  <div class="bg-white rounded-xl shadow p-4">
-    <div class="text-sm text-gray-500">Headroom</div>
-    <div class="text-2xl font-semibold" [ngClass]="kpi.headroom >= 0 ? 'text-green-600' : 'text-red-600'">
+
+  <div class="bg-white rounded-xl shadow p-4 relative">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-gray-500">Headroom</div>
+      <app-info placement="left" class="absolute top-2 right-2"
+        text="Margine prima di toccare la soglia di margin call (MaxCredit − Prestito usato)."></app-info>
+    </div>
+    <div class="mt-2 text-2xl font-semibold" [ngClass]="kpi.headroom >= 0 ? 'text-green-600' : 'text-red-600'">
       {{ kpi.headroom | currency:'EUR' }}
     </div>
   </div>
-  <div class="bg-white rounded-xl shadow p-4">
-    <div class="text-sm text-gray-500">Calo a MC</div>
-    <div class="text-2xl font-semibold text-red-600">-{{ kpi.mcShock * 100 | number:'1.0-0' }}%
+
+  <div class="bg-white rounded-xl shadow p-4 relative">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-gray-500">Calo a MC</div>
+      <app-info placement="left" class="absolute top-2 right-2"
+        text="Calo percentuale del portafoglio che porterebbe l’LTV alla soglia MC."></app-info>
     </div>
+    <div class="mt-2 text-2xl font-semibold text-red-600">-{{ kpi.mcShock * 100 | number:'1.0-0' }}%</div>
   </div>
 </div>
 
 <!-- Grafico -->
 <div class="bg-white shadow rounded-2xl p-4 my-4">
-  <div #chartDiv class="w-full h-[420px]"></div>
+  <div class="flex items-center justify-between mb-2">
+    <div class="text-sm text-gray-600 font-medium">LTV vs Calo Portafoglio</div>
+    <app-info placement="left"
+      text="Simulazione di shock di mercato; la linea rossa indica la soglia di margin call."></app-info>
+  </div>
+  <div #chartDiv class="w-full h-[320px] md:h-[420px]"></div>
 </div>
 
 <!-- Tabella portafoglio -->
-<table class="w-full table-auto bg-white rounded-2xl shadow">
-  <thead>
-    <tr class="text-left text-gray-500">
-      <th class="p-3">Ticker</th>
-      <th class="p-3">Nome</th>
-      <th class="p-3">Qty</th>
-      <th class="p-3">Prezzo</th>
-      <th class="p-3">Valuta</th>
-      <th class="p-3">Valore EUR</th>
-      <th class="p-3">Idoneo</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let r of portfolio" class="border-t">
-      <td class="p-3">{{ r.symbol }}</td>
-      <td class="p-3">{{ r.name }}</td>
-      <td class="p-3"><input type="number" [(ngModel)]="r.qty" (change)="recalc()"
-          class="border rounded px-2 py-1 w-24"></td>
-      <td class="p-3">{{ r.price | number:'1.2-2' }}</td>
-      <td class="p-3">{{ r.currency }}</td>
-      <td class="p-3">{{ valueEUR(r) | number:'1.2-2' }}</td>
-      <td class="p-3"><input type="checkbox" [(ngModel)]="r.eligible" (change)="recalc()"></td>
-    </tr>
-  </tbody>
-</table>
+<div class="bg-white rounded-2xl shadow overflow-x-auto">
+  <table class="min-w-full table-auto">
+    <thead>
+      <tr class="text-left text-gray-500">
+        <th class="p-3 whitespace-nowrap">Ticker</th>
+        <th class="p-3 whitespace-nowrap">Nome</th>
+        <th class="p-3 whitespace-nowrap">Qty</th>
+        <th class="p-3 whitespace-nowrap">Prezzo</th>
+        <th class="p-3 whitespace-nowrap">Valuta</th>
+        <th class="p-3 whitespace-nowrap">Valore EUR</th>
+        <th class="p-3 whitespace-nowrap">Idoneo</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let r of portfolio" class="border-t hover:bg-gray-50 transition">
+        <td class="p-3 font-medium text-gray-800">{{ r.symbol }}</td>
+        <td class="p-3 text-gray-700">{{ r.name }}</td>
+        <td class="p-3">
+          <input type="number" [(ngModel)]="r.qty" (change)="recalc()" inputmode="numeric"
+            class="border rounded px-2 py-2 w-24 text-base md:text-sm focus:ring-2 focus:ring-blue-400 outline-none transition" />
+        </td>
+        <td class="p-3 text-gray-700">{{ r.price | number:'1.2-2' }}</td>
+        <td class="p-3 text-gray-700">{{ r.currency }}</td>
+        <td class="p-3 text-gray-700">{{ valueEUR(r) | number:'1.2-2' }}</td>
+        <td class="p-3 text-center">
+          <input type="checkbox" [(ngModel)]="r.eligible" (change)="recalc()"
+            class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer" />
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
