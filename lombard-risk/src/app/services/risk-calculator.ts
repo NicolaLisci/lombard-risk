@@ -13,6 +13,7 @@ export interface RiskKpi {
   eligibleCollateral: number; // in EUR
   maxCredit: number;
   ltv: number;                // 0..1
+  liquidityProvided:number;
   headroom: number;           // €
   mcShock: number;            // calo % del portafoglio che porta a MC (>=0)
 }
@@ -35,15 +36,16 @@ export class RiskCalculatorService {
     const eligible = this.eligibleEUR(rowsEUR);
     const maxCredit = eligible * portfolioAR;
     const ltv = eligible > 0 ? loanUsed / eligible : 0;
+    const liquidityProvided = eligible * portfolioAR;
     const headroom = maxCredit - loanUsed;
 
     // shock deterministico fino a MC (risolve loanUsed / (eligible*(1+s)) = mcThresh)
     // => (1+s) = loanUsed/(eligible*mcThresh)  => s = loanUsed/(eligible*mcThresh) - 1
     const mcShock = eligible > 0 && mcThresh > 0
-      ? Math.max(0, (loanUsed / (eligible * mcThresh)) - 1)
-      : 0;
+    ? Math.max(0, (loanUsed / (eligible * mcThresh)) - 1)
+    : 0;
 
-    return { eligibleCollateral: eligible, maxCredit, ltv, headroom, mcShock };
+    return { eligibleCollateral: eligible, maxCredit, ltv, liquidityProvided, headroom, mcShock };
   }
 
   stressTest(

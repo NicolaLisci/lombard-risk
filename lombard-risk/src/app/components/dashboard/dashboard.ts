@@ -13,7 +13,7 @@ import { FxService } from '../../services/fx';
 import { InfoHintComponent } from '../info-hint/info-hint';
 import { IconComponent } from '../icon/icon';
 
-type Kpi = { eligibleCollateral: number; maxCredit: number; ltv: number; headroom: number; mcShock: number };
+type Kpi = { eligibleCollateral: number; maxCredit: number; ltv: number; liquidityProvided: number; headroom: number; mcShock: number };
 
 @Component({
   selector: 'app-dashboard',
@@ -33,7 +33,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 
   portfolio: PortfolioRow[] = [];
   form;
-  kpi: Kpi = { eligibleCollateral: 0, maxCredit: 0, ltv: 0, headroom: 0, mcShock: 0 };
+  kpi: Kpi = { eligibleCollateral: 0, maxCredit: 0, ltv: 0, liquidityProvided:0, headroom: 0, mcShock: 0 };
   private fxCache: Record<string, number> = { EUR: 1 };
 
   trackBySymbol = (_: number, row: { symbol: string }) => row.symbol;
@@ -59,12 +59,12 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 
     // autocomplete pipeline
     this.search$
-      .pipe(
-        debounceTime(250),
-        distinctUntilChanged(),
-        switchMap(q => q.length < 2 ? of([]) : this.api.searchSymbols(q))
-      )
-      .subscribe(list => (this.suggestions = list));
+    .pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap(q => q.length < 2 ? of([]) : this.api.searchSymbols(q))
+    )
+    .subscribe(list => (this.suggestions = list));
     window.addEventListener('resize', this.onResize);
   }
 
@@ -141,7 +141,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
 
     if (this.portfolio.length === 0) {
       // svuota KPI e distruggi il chart se esiste
-      this.kpi = { eligibleCollateral: 0, maxCredit: 0, ltv: 0, headroom: 0, mcShock: 0 };
+      this.kpi = { eligibleCollateral: 0, maxCredit: 0, ltv: 0,liquidityProvided:0, headroom: 0, mcShock: 0 };
       if (this.chartInited) {
         this.chart?.clear();
         this.chart?.dispose();
