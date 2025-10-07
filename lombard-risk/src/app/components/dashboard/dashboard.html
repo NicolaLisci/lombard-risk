@@ -16,13 +16,26 @@
 </form>
 
 <!-- Add symbol -->
-<div class="bg-white shadow rounded-2xl p-4 my-4">
+<!-- AUTOCOMPLETE -->
+<div class="bg-white shadow rounded-2xl p-4 my-4 relative">
   <div class="flex flex-wrap gap-2">
-    <input [(ngModel)]="search" placeholder="Cerca simbolo (es. AAPL)" class="border rounded-lg px-3 py-2">
-    <button (click)="addSymbol()" class="bg-blue-600 text-white rounded-xl px-4 py-2">Aggiungi</button>
+    <input id="symbolSearchBox" [(ngModel)]="search" (ngModelChange)="onSearchChange($event)"
+      placeholder="Cerca simbolo (es. VWCE, AAPL, ENEL.MI)" class="border rounded-lg px-3 py-2 w-full"
+      autocomplete="off" />
   </div>
-  <div class="text-xs text-gray-500 mt-2">Usa Alpha Vantage (GLOBAL_QUOTE); valuta in EUR via FX.</div>
+
+  <!-- dropdown -->
+  <ul id="symbolDropdown" *ngIf="suggestions.length > 0"
+    class="absolute bg-white border rounded-lg mt-1 w-full shadow-lg z-10">
+    <li *ngFor="let s of suggestions" (click)="onSelectSuggestion(s)" class="px-3 py-2 hover:bg-blue-50 cursor-pointer">
+      <div class="font-semibold">{{ s.symbol }}</div>
+      <div class="text-xs text-gray-500">{{ s.name }} • {{ s.exchange }}</div>
+    </li>
+  </ul>
 </div>
+
+
+
 
 <!-- KPI -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 my-4">

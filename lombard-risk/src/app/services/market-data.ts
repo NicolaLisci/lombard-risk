@@ -16,9 +16,9 @@ export interface Quote {
 export class MarketDataService {
   // 👇 endpoint RapidAPI (Yahoo). Mantieni questo base e passa "ticker" nei params.
   private base = 'https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock/quotes';
-  private key  = 'b4711ab535mshdc60f59129f13abp18b6dcjsncd801f03b647'; // <-- metti la tua chiave RapidAPI
+  private key = 'b4711ab535mshdc60f59129f13abp18b6dcjsncd801f03b647'; // <-- metti la tua chiave RapidAPI
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Quote singolo (ETF o azione). Accetta simboli con suffisso es: "VWCE.MI", "AAPL".
@@ -39,7 +39,7 @@ export class MarketDataService {
           res?.body?.[0] ??
           null;
 
-          console.log(item.currency)
+        console.log(item.currency)
 
         return {
           symbol: item?.symbol ?? symbol,
@@ -53,4 +53,29 @@ export class MarketDataService {
       catchError(() => of({ symbol, price: 0 } as Quote))
     );
   }
+
+  searchSymbols(query: string) {
+    if (!query.trim()) return of([]);
+
+    const headers = new HttpHeaders({
+      'X-RapidAPI-Key': this.key,
+      'X-RapidAPI-Host': 'yahoo-finance15.p.rapidapi.com'
+    });
+    const params = new HttpParams().set('search', query.trim());
+
+    return this.http.get<any>('https://yahoo-finance15.p.rapidapi.com/api/v1/markets/search', { headers, params })
+      .pipe(
+        map(res => {
+          const items = res?.body ?? [];
+          return items.map((i: any) => ({
+            symbol: i.symbol,
+            name: i.longname ?? i.shortname ?? i.symbol,
+            exchange: i.exchDisp,
+            type: i.quoteType
+          }));
+        }),
+        catchError(() => of([]))
+      );
+  }
+
 }
