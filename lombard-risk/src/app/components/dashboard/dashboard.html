@@ -1,0 +1,24 @@
+<div class="max-w-5xl mx-auto p-6 space-y-8">
+
+  <h1 class="text-3xl font-bold text-blue-600">Lombard Risk Dashboard</h1>
+
+  <div class="grid grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl shadow p-4">
+      <h3 class="text-sm text-gray-500">Collaterale Idoneo</h3>
+      <p class="text-xl font-semibold">{{ ltvInfo.eligible | currency:'EUR' }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-4">
+      <h3 class="text-sm text-gray-500">LTV Attuale</h3>
+      <p class="text-xl font-semibold text-blue-600">{{ (ltvInfo.ltv * 100) | number:'1.1-1' }}%</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-4">
+      <h3 class="text-sm text-gray-500">Margine Residuo</h3>
+      <p class="text-xl font-semibold text-green-600">{{ ltvInfo.headroom | currency:'EUR' }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded-xl p-4">
+    <div #chartDiv class="w-full h-[400px]"></div>
+  </div>
+
+</div>
